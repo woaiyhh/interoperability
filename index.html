@@ -56,12 +56,27 @@
             padding: 10px;
             margin: 5px 0;
             border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .delete-btn:hover {
+            background: #c82333;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>留言板</h2>
+        <input type="text" id="usernameInput" placeholder="请输入您的用户名">
         <input type="text" id="messageInput" placeholder="输入留言...">
         <button onclick="submitMessage()">提交</button>
         <h3>留言列表：</h3>
@@ -70,7 +85,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
-        import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-database.js";
+        import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDsZ-VZ7lzklLTlfizbSeVMEC5QjdLnhrY",
@@ -85,31 +100,60 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
+        // 提交留言
         window.submitMessage = function() {
+            const usernameInput = document.getElementById("usernameInput");
             const messageInput = document.getElementById("messageInput");
+            const username = usernameInput.value.trim();
             const message = messageInput.value.trim();
 
-            if (!message) {
-                alert("请输入内容！");
+            if (!username || !message) {
+                alert("请输入用户名和留言内容！");
                 return;
             }
 
             const messageRef = push(ref(database, "messages"));
-            set(messageRef, { text: message });
+            set(messageRef, {
+                username: username,
+                text: message
+            });
 
-            messageInput.value = ""; // 提交后清空输入框
+            usernameInput.value = ""; // 提交后清空用户名
+            messageInput.value = ""; // 提交后清空留言框
         }
 
+        // 删除留言
+        window.deleteMessage = function(messageId) {
+            const messageRef = ref(database, "messages/" + messageId);
+            remove(messageRef);
+        }
+
+        // 监听数据库变化，更新留言列表
         const messagesRef = ref(database, "messages");
         onValue(messagesRef, (snapshot) => {
             const messagesDiv = document.getElementById("messages");
-            messagesDiv.innerHTML = "";
+            messagesDiv.innerHTML = ""; // 清空之前的留言内容
+
             snapshot.forEach((childSnapshot) => {
                 const messageData = childSnapshot.val();
-                const p = document.createElement("div");
-                p.textContent = messageData.text;
-                p.classList.add("message");
-                messagesDiv.appendChild(p);
+                const messageId = childSnapshot.key;
+
+                const messageDiv = document.createElement("div");
+                messageDiv.classList.add("message");
+
+                const textDiv = document.createElement("div");
+                textDiv.textContent = `${messageData.username}: ${messageData.text}`;
+                messageDiv.appendChild(textDiv);
+
+                const deleteBtn = document.createElement("button");
+                deleteBtn.textContent = "删除";
+                deleteBtn.classList.add("delete-btn");
+                deleteBtn.onclick = function() {
+                    deleteMessage(messageId);
+                };
+                messageDiv.appendChild(deleteBtn);
+
+                messagesDiv.appendChild(messageDiv);
             });
 
             // 保持最新留言可见
