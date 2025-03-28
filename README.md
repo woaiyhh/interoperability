@@ -1,4 +1,3 @@
-# interoperability
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -37,15 +36,14 @@
     <script>
         // Firebase 配置信息
         const firebaseConfig = {
-            apiKey: "AIzaSyDsZ-VZ7lzklLTlfizbSeVMEC5QjdLnhrY",
-            authDomain: "interoperability-b22f0.firebaseapp.com",
-            databaseURL: "https://interoperability-b22f0-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "interoperability-b22f0",
-            storageBucket: "interoperability-b22f0.firebasestorage.app",
-            messagingSenderId: "697557753503",
-            appId: "1:697557753503:web:868ce96bfda21a1e2bccaa"
-        };
-
+    apiKey: "AIzaSyDsZ-VZ7lzklLTlfizbSeVMEC5QjdLnhrY",
+    authDomain: "interoperability-b22f0.firebaseapp.com",
+    databaseURL: "https://interoperability-b22f0-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "interoperability-b22f0",
+    storageBucket: "interoperability-b22f0.firebasestorage.app",
+    messagingSenderId: "697557753503",
+    appId: "1:697557753503:web:868ce96bfda21a1e2bccaa"
+  };
         // 初始化 Firebase
         const app = firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
