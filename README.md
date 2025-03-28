@@ -33,27 +33,27 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js"></script>
+
     <script>
-        // 初始化 Firebase
+        // Firebase 配置信息
         const firebaseConfig = {
-            apiKey: "your-api-key",
-            authDomain: "your-app-id.firebaseapp.com",
-            databaseURL: "https://your-app-id.firebaseio.com",
-            projectId: "your-app-id",
-            storageBucket: "your-app-id.appspot.com",
-            messagingSenderId: "your-sender-id",
-            appId: "your-app-id"
+            apiKey: "AIzaSyDsZ-VZ7lzklLTlfizbSeVMEC5QjdLnhrY",
+            authDomain: "interoperability-b22f0.firebaseapp.com",
+            databaseURL: "https://interoperability-b22f0-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "interoperability-b22f0",
+            storageBucket: "interoperability-b22f0.firebasestorage.app",
+            messagingSenderId: "697557753503",
+            appId: "1:697557753503:web:868ce96bfda21a1e2bccaa"
         };
 
         // 初始化 Firebase
         const app = firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // 提交留言函数
-        async function submitMessage() {
+        // 提交留言
+        function submitMessage() {
             const message = document.getElementById('messageBox').value;
             if (message.trim() !== "") {
-                // 将留言存入Firebase数据库
                 const messageRef = database.ref('messages');
                 messageRef.push({
                     message: message,
@@ -66,7 +66,7 @@
             }
         }
 
-        // 加载留言函数
+        // 加载留言
         function loadMessage() {
             const messageRef = database.ref('messages');
             messageRef.limitToLast(1).on('child_added', function(snapshot) {
