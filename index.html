@@ -93,6 +93,8 @@
       font-weight: bold;
       border-radius: 5px;
       z-index: 1;
+      padding: 10px;
+      text-align: center;
     }
   </style>
 </head>
@@ -101,6 +103,7 @@
     <h2>留言板</h2>
     <!-- <input type="text" id="usernameInput" placeholder="请输入您的用户名"> -->
     <input type="text" id="messageInput" placeholder="输入留言...">
+    <input type="text" id="hintInput" placeholder="提示语（可选，例如：‘此留言是？’）">
     <input type="password" id="password" placeholder="设置查看密码">
     <button onclick="submitMessage()">提交</button>
     <h3>留言列表：</h3>
@@ -124,38 +127,36 @@
     const app = initializeApp(firebaseConfig);
     const database = getDatabase(app);
 
-    // Base64 加密函数
     function encodeBase64(str) {
       return btoa(unescape(encodeURIComponent(str)));
     }
 
     // 提交留言
     window.submitMessage = function () {
-      const usernameInput = document.getElementById("usernameInput");
-      const messageInput = document.getElementById("messageInput");
-      const passwordInput = document.getElementById("password");
-
-      const username = usernameInput.value.trim();
-      const message = messageInput.value.trim();
-      const password = passwordInput.value.trim();
+      const username = document.getElementById("usernameInput").value.trim();
+      const message = document.getElementById("messageInput").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const hint = document.getElementById("hintInput").value.trim();
 
       if (!username || !message || !password) {
         alert("请输入用户名、留言内容和密码！");
         return;
       }
 
-      const encryptedPassword = encodeBase64(password); // 加密密码
+      const encryptedPassword = encodeBase64(password);
 
       const messageRef = push(ref(database, "messages"));
       set(messageRef, {
         username: username,
         text: message,
-        password: encryptedPassword
+        password: encryptedPassword,
+        hint: hint || ""  // 保存提示
       });
 
-      usernameInput.value = "";
-      messageInput.value = "";
-      passwordInput.value = "";
+      document.getElementById("usernameInput").value = "";
+      document.getElementById("messageInput").value = "";
+      document.getElementById("password").value = "";
+      document.getElementById("hintInput").value = "";
     };
 
     // 删除留言
@@ -170,32 +171,32 @@
       }
     };
 
-    // 监听留言并显示
+    // 显示留言
     const messagesRef = ref(database, "messages");
     onValue(messagesRef, (snapshot) => {
       const messagesDiv = document.getElementById("messages");
       messagesDiv.innerHTML = "";
 
       snapshot.forEach((childSnapshot) => {
-        const messageData = childSnapshot.val();
+        const data = childSnapshot.val();
         const messageId = childSnapshot.key;
 
         const messageDiv = document.createElement("div");
         messageDiv.classList.add("message");
 
         const textDiv = document.createElement("div");
-        textDiv.textContent = `${messageData.username}: ${messageData.text}`;
+        textDiv.textContent = `${data.username}: ${data.text}`;
         messageDiv.appendChild(textDiv);
 
         // 添加模糊遮罩
         const overlay = document.createElement("div");
         overlay.className = "blur-overlay";
-        overlay.textContent = "点击输入密码查看";
+        overlay.textContent = data.hint || "点击输入密码查看";
 
         overlay.onclick = () => {
           const inputPwd = prompt("请输入密码查看该留言：");
           const encodedInput = encodeBase64(inputPwd);
-          if (encodedInput === messageData.password) {
+          if (encodedInput === data.password) {
             overlay.remove();
           } else {
             alert("密码错误！");
@@ -208,9 +209,7 @@
         const deleteBtn = document.createElement("button");
         deleteBtn.textContent = "删除";
         deleteBtn.classList.add("delete-btn");
-        deleteBtn.onclick = function () {
-          deleteMessage(messageId);
-        };
+        deleteBtn.onclick = () => deleteMessage(messageId);
         messageDiv.appendChild(deleteBtn);
 
         messagesDiv.appendChild(messageDiv);
