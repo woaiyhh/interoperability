@@ -65,6 +65,10 @@
       position: relative;
     }
 
+    .message {
+  position: relative; /* 关键：确保 overlay 是相对于 message 定位 */
+    }
+
     .delete-btn {
       background: #dc3545;
       color: white;
@@ -79,22 +83,22 @@
     }
 
     .blur-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      backdrop-filter: blur(8px);
-      background: rgba(255, 255, 255, 0.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #333;
-      font-weight: bold;
-      border-radius: 5px;
-      z-index: 1;
-      padding: 10px;
-      text-align: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: white; /* 全白遮罩 */
+  opacity: 1;         /* 不透明 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  font-weight: bold;
+  border-radius: 5px;
+  z-index: 10;
+  padding: 10px;
+  text-align: center;
     }
   </style>
 </head>
