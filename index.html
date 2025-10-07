@@ -1,226 +1,536 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>留言板</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f9;
-      text-align: center;
-      padding: 20px;
-    }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>云端剪贴板 | Cloud Clipboard</title>
+    <style>
+        /* 引入思源黑体作为默认中文字体，提升简约感 */
+        @font-face {
+            font-family: 'PingFangSC-Regular';
+            src: local('PingFang SC'), local('PingFangSC-Regular'), local('Heiti SC'), local('Microsoft YaHei');
+        }
+        body {
+            font-family: 'PingFangSC-Regular', Arial, sans-serif;
+            background-color: #f5f5f7; /* 接近 Apple 的浅灰色背景 */
+            text-align: center;
+            padding: 40px 20px;
+            color: #1d1d1f; /* 接近 Apple 的深色文字 */
+        }
+        .container {
+            max-width: 1200px; /* 进一步拓宽以容纳三列 */
+            margin: auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); /* 柔和阴影 */
+            text-align: left;
+        }
+        h2, h3 {
+            color: #1d1d1f;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        input[type="text"], input[type="password"], textarea {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #d2d2d7; /* 浅灰色边框 */
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box; /* 确保 padding 不影响宽度 */
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        button {
+            padding: 12px 20px;
+            background: #007aff; /* Apple Blue */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            font-weight: 500;
+        }
+        button:hover {
+            background: #0066ff;
+        }
+        button:active {
+            transform: scale(0.99);
+        }
+        /* 布局分区 */
+        .content-sections {
+            display: flex;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        /* 三个区域的宽度分配 */
+        .current-clipboard-section {
+            flex: 1.2;
+        }
+        .history-section {
+            flex: 2;
+            display: flex;
+            gap: 20px;
+        }
+        .section {
+            padding: 20px;
+            border-radius: 10px;
+        }
+        /* 各分区样式 */
+        .current-clipboard-section, .history-list {
+            background-color: #ffffff;
+            border: 1px solid #d2d2d7;
+        }
+        .history-list {
+            flex: 1;
+        }
+        .current-clipboard-section .message-card {
+             border-left: 4px solid #34c759;
+        }
+        .messages {
+            margin-top: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+            border-radius: 8px;
+            background: #f7f7f7;
+            border: 1px solid #e0e0e5;
+        }
+        /* 单个留言卡片 */
+        .message-card {
+            background: #ffffff;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            position: relative;
+            border-left: 4px solid #007aff;
+        }
+        .message-card.public {
+            border-left: 4px solid #5ac8fa;
+        }
+        .message-card.private {
+            border-left: 4px solid #ff9500;
+        }
+        .message-card p {
+            margin: 5px 0;
+        }
+        .copy-btn, .delete-btn {
+            float: right;
+            margin-left: 10px;
+            padding: 6px 12px;
+            font-size: 14px;
+            border-radius: 6px;
+        }
+        .copy-btn {
+            background: #34c759;
+        }
+        .copy-btn:hover {
+            background: #2cb742;
+        }
+        .delete-btn {
+            background: #ff3b30;
+        }
+        .delete-btn:hover {
+            background: #cc2925;
+        }
+        /* 密码遮罩 */
+        .blur-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #8e8e93;
+            font-weight: 500;
+            border-radius: 8px;
+            z-index: 10;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        .blur-overlay:hover {
+            opacity: 0.9;
+        }
+        /* 错误反馈样式 - 保留用于局部的密码输入错误反馈 */
+        .error-feedback {
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff3b30;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
 
-    .container {
-      max-width: 400px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
+        /* ------------------------------------- */
+        /* Toast Notification 样式 */
+        /* ------------------------------------- */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-    input {
-      width: calc(100% - 20px);
-      padding: 10px;
-      margin-bottom: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-size: 16px;
-    }
+        .toast {
+            min-width: 250px;
+            padding: 10px 20px;
+            margin-bottom: 10px;
+            background-color: rgba(0, 0, 0, 0.85);
+            color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            transform: translateY(-20px);
+            font-size: 15px;
+            font-weight: 500;
+            text-align: center;
+        }
 
-    button {
-      width: 100%;
-      padding: 10px;
-      background: #28a745;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    button:hover {
-      background: #218838;
-    }
-
-    .messages {
-      margin-top: 20px;
-      text-align: left;
-      max-height: 300px;
-      overflow-y: auto;
-      padding: 10px;
-      background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-
-    .message {
-      background: #e9ecef;
-      padding: 10px;
-      margin: 5px 0;
-      border-radius: 5px;
-      position: relative;
-    }
-
-    .message {
-  position: relative; /* 关键：确保 overlay 是相对于 message 定位 */
-    }
-
-    .delete-btn {
-      background: #dc3545;
-      color: white;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    .delete-btn:hover {
-      background: #c82333;
-    }
-
-    .blur-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: white; /* 全白遮罩 */
-  opacity: 1;         /* 不透明 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #333;
-  font-weight: bold;
-  border-radius: 5px;
-  z-index: 10;
-  padding: 10px;
-  text-align: center;
-    }
-  </style>
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h2>留言板</h2>
-    <input type="text" id="usernameInput" placeholder="请输入您的用户名">
-    <input type="text" id="messageInput" placeholder="输入留言...">
-    <input type="text" id="hintInput" placeholder="提示语（可选，例如：‘此留言是？’）">
-    <input type="password" id="password" placeholder="设置查看密码">
-    <button onclick="submitMessage()">提交</button>
-    <h3>留言列表：</h3>
-    <div class="messages" id="messages"></div>
-  </div>
+    <div id="toast-container"></div>
+    <div class="container">
+        <h2>云端剪贴板</h2>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
-    import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-database.js";
+        <div class="input-area">
+            <textarea id="messageInput" placeholder="输入内容..."></textarea>
+            <input type="password" id="password" placeholder="设置查看密码（可选，留空则为公开）">
+            <button onclick="submitMessage()">提交内容</button>
+        </div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDsZ-VZ7lzklLTlfizbSeVMEC5QjdLnhrY",
-      authDomain: "interoperability-b22f0.firebaseapp.com",
-      databaseURL: "https://interoperability-b22f0-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "interoperability-b22f0",
-      storageBucket: "interoperability-b22f0.appspot.com",
-      messagingSenderId: "697557753503",
-      appId: "1:697557753503:web:51b241fb83083ba32bccaa"
-    };
+        <div class="content-sections">
+            <div class="section current-clipboard-section">
+                <h3>当前剪贴板 (最新公开内容)</h3>
+                <div id="latestPublicMessage" class="message-card public">
+                    <p>等待内容同步...</p>
+                </div>
+                <button class="copy-btn" onclick="copyLatestContent()">一键复制</button>
+            </div>
 
-    const app = initializeApp(firebaseConfig);
-    const database = getDatabase(app);
+            <div class="history-section">
+                <div class="history-list">
+                    <h3>旧公开内容</h3>
+                    <div class="messages" id="publicMessages">
+                        <p style="text-align: center; color: #8e8e93;">所有旧的未加密内容将显示在此处。</p>
+                    </div>
+                </div>
+                
+                <div class="history-list">
+                    <h3>加密内容</h3>
+                    <div class="messages" id="privateMessages">
+                        <p style="text-align: center; color: #8e8e93;">所有设置了密码的内容将显示在此处。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    function encodeBase64(str) {
-      return btoa(unescape(encodeURIComponent(str)));
-    }
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+        import { getDatabase, ref, push, set, onValue, query, limitToLast, remove } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-database.js";
 
-    // 提交留言
-    window.submitMessage = function () {
-      const username = document.getElementById("usernameInput").value.trim();
-      const message = document.getElementById("messageInput").value.trim();
-      const password = document.getElementById("password").value.trim();
-      const hint = document.getElementById("hintInput").value.trim();
+        // 🚨 重要：这是终极密码
+        const ULTIMATE_PASSWORD = "myUltimateKey123"; 
 
-      if (!username || !message || !password) {
-        alert("请输入用户名、留言内容和密码！");
-        return;
-      }
-
-      const encryptedPassword = encodeBase64(password);
-
-      const messageRef = push(ref(database, "messages"));
-      set(messageRef, {
-        username: username,
-        text: message,
-        password: encryptedPassword,
-        hint: hint || ""  // 保存提示
-      });
-
-      document.getElementById("usernameInput").value = "";
-      document.getElementById("messageInput").value = "";
-      document.getElementById("password").value = "";
-      document.getElementById("hintInput").value = "";
-    };
-
-    // 删除留言
-    window.deleteMessage = function (messageId) {
-      const password = prompt("请输入密码以确认删除留言：");
-      const correctPassword = "19142";
-      if (password === correctPassword) {
-        const messageRef = ref(database, "messages/" + messageId);
-        remove(messageRef);
-      } else {
-        alert("密码错误，无法删除留言！");
-      }
-    };
-
-    // 显示留言
-    const messagesRef = ref(database, "messages");
-    onValue(messagesRef, (snapshot) => {
-      const messagesDiv = document.getElementById("messages");
-      messagesDiv.innerHTML = "";
-
-      snapshot.forEach((childSnapshot) => {
-        const data = childSnapshot.val();
-        const messageId = childSnapshot.key;
-
-        const messageDiv = document.createElement("div");
-        messageDiv.classList.add("message");
-
-        const textDiv = document.createElement("div");
-        textDiv.textContent = `${data.username}: ${data.text}`;
-        messageDiv.appendChild(textDiv);
-
-        // 添加模糊遮罩
-        const overlay = document.createElement("div");
-        overlay.className = "blur-overlay";
-        overlay.textContent = data.hint || "点击输入密码查看";
-
-        overlay.onclick = () => {
-          const inputPwd = prompt("请输入密码查看该留言：");
-          const encodedInput = encodeBase64(inputPwd);
-          if (encodedInput === data.password) {
-            overlay.remove();
-          } else {
-            alert("密码错误！");
-          }
+        const firebaseConfig = {
+            apiKey: "AIzaSyDsZ-VZ7lzklLTlfizbSeVMEC5QjdLnhrY",
+            authDomain: "interoperability-b22f0.firebaseapp.com",
+            databaseURL: "https://interoperability-b22f0-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "interoperability-b22f0",
+            storageBucket: "interoperability-b22f0.appspot.com",
+            messagingSenderId: "697557753503",
+            appId: "1:697557753503:web:51b241fb83083ba32bccaa"
         };
 
-        messageDiv.appendChild(overlay);
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        
+        // --- 核心安全: SHA-256 哈希函数 ---
+        async function hashPassword(password) {
+            if (!password) return "";
+            
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            
+            return hashHex;
+        }
+        // ------------------------------------
 
-        // 删除按钮
-        const deleteBtn = document.createElement("button");
-        deleteBtn.textContent = "删除";
-        deleteBtn.classList.add("delete-btn");
-        deleteBtn.onclick = () => deleteMessage(messageId);
-        messageDiv.appendChild(deleteBtn);
+        // --- Toast Notification 辅助函数 ---
+        function showToast(message, duration = 2000) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            container.appendChild(toast);
 
-        messagesDiv.appendChild(messageDiv);
-      });
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10); 
 
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    });
-  </script>
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.addEventListener('transitionend', () => {
+                    toast.remove();
+                }, { once: true });
+            }, duration);
+        }
+        // ------------------------------------
+
+
+        // 提交内容 (异步) - 成功时不提示
+        window.submitMessage = async function () {
+            const message = document.getElementById("messageInput").value.trim();
+            const password = document.getElementById("password").value.trim();
+
+            if (!message) {
+                // 提交内容为空时，这是重要的流程中断错误，保留 alert
+                alert("内容不能为空！");
+                return;
+            }
+
+            const hashedPassword = await hashPassword(password);
+            const isPrivate = !!password; 
+
+            const messageRef = push(ref(database, "clipboard"));
+            set(messageRef, {
+                text: message,
+                password: hashedPassword, 
+                timestamp: Date.now(),
+                isPrivate: isPrivate
+            }).then(() => {
+                // 移除提交成功提示
+                document.getElementById("messageInput").value = "";
+                document.getElementById("password").value = "";
+            }).catch(error => {
+                console.error("提交失败: ", error);
+                alert("提交失败，请检查网络或配置。");
+            });
+        };
+
+        // 一键复制最新内容 - 保留成功提示
+        window.copyLatestContent = async function() {
+            const latestDiv = document.getElementById("latestPublicMessage");
+            const textToCopy = latestDiv.dataset.content || "";
+            
+            if (!textToCopy) return;
+
+            try {
+                await navigator.clipboard.writeText(textToCopy);
+                showToast("已成功复制到剪贴板"); // 保留成功提示
+            } catch (err) {
+                console.error('复制失败: ', err);
+                alert('复制失败，请手动选择复制');
+            }
+        };
+
+        // 列表中的复制按钮功能 - 保留成功提示
+        window.copyContentFromList = async function(button, messageId, isPrivate) {
+            const messageCard = button.closest('.message-card');
+            let textToCopy = messageCard.dataset.decryptedContent;
+
+            if (isPrivate && !textToCopy) {
+                alert("这是加密内容，请先点击遮罩输入密码查看");
+                return;
+            }
+            
+            if (textToCopy) {
+                 try {
+                    await navigator.clipboard.writeText(textToCopy);
+                    showToast("复制成功"); // 保留成功提示
+                } catch (err) {
+                    console.error('复制失败: ', err);
+                    alert('复制失败，请手动选择复制');
+                }
+            } else {
+                const messageRef = ref(database, "clipboard/" + messageId);
+                onValue(messageRef, async (snapshot) => {
+                    const data = snapshot.val();
+                    if (data && !data.isPrivate) {
+                        try {
+                            await navigator.clipboard.writeText(data.text);
+                            showToast("已成功复制历史内容。"); // 保留成功提示
+                        } catch (err) {
+                            alert('复制失败，请手动选择复制。');
+                        }
+                    }
+                }, { onlyOnce: true });
+            }
+        };
+
+        // 辅助函数：显示密码错误提示 (局部反馈)
+        function showPasswordError(overlay) {
+            let errorDiv = overlay.querySelector('.error-feedback');
+            if (!errorDiv) {
+                errorDiv = document.createElement('div');
+                errorDiv.className = 'error-feedback';
+                errorDiv.textContent = '密码错误';
+                overlay.appendChild(errorDiv);
+            }
+            errorDiv.style.opacity = 1;
+            setTimeout(() => {
+                errorDiv.style.opacity = 0;
+            }, 1000);
+        }
+
+        // 删除留言函数 - 成功时不提示，失败时提示
+        window.deleteMessage = function (messageId, isPrivate) {
+            
+            if (!isPrivate) { 
+                if (confirm("确定要删除这条公开内容吗？")) { 
+                    const messageRef = ref(database, "clipboard/" + messageId);
+                    remove(messageRef); 
+                    // 移除公开内容删除成功提示
+                }
+                return;
+            }
+            
+            const password = prompt("这是加密内容。请输入删除密码：");
+            const correctDeletePassword = "19142"; 
+            
+            if (password === correctDeletePassword) {
+                const messageRef = ref(database, "clipboard/" + messageId);
+                remove(messageRef);
+                // 移除加密内容删除成功提示
+            } else if (password !== null) { 
+                showToast("删除密码错误！"); // 保留失败提示
+            }
+        };
+
+
+        // 渲染最新公开内容和历史记录
+        const clipboardRef = ref(database, "clipboard");
+        onValue(query(clipboardRef, limitToLast(50)), (snapshot) => { 
+            const publicMessagesDiv = document.getElementById("publicMessages");
+            const privateMessagesDiv = document.getElementById("privateMessages");
+            const latestPublicDiv = document.getElementById("latestPublicMessage");
+            
+            publicMessagesDiv.innerHTML = "";
+            privateMessagesDiv.innerHTML = "";
+
+            let latestPublicFound = false;
+            const allMessages = [];
+
+            snapshot.forEach((childSnapshot) => {
+                const data = childSnapshot.val();
+                data.id = childSnapshot.key;
+                allMessages.push(data);
+            });
+
+            allMessages.reverse().forEach((data) => {
+                if (!data.isPrivate && !latestPublicFound) {
+                    latestPublicDiv.innerHTML = `<p style="font-size: 18px; font-weight: 600;">${data.text}</p>`;
+                    latestPublicDiv.dataset.content = data.text; 
+                    latestPublicFound = true;
+                    return; 
+                }
+
+                const messageDiv = document.createElement("div");
+                messageDiv.classList.add("message-card");
+                
+                let targetDiv = null;
+                let previewText = data.text.substring(0, 30) + (data.text.length > 30 ? "..." : "");
+
+                if (data.isPrivate) {
+                    messageDiv.classList.add("private");
+                    targetDiv = privateMessagesDiv;
+                    previewText = "加密内容";
+                } else {
+                    messageDiv.classList.add("public");
+                    targetDiv = publicMessagesDiv;
+                }
+                
+                messageDiv.innerHTML = `
+                    <p>内容: ${previewText}</p>
+                    <p style="font-size: 12px; color: #8e8e93;">时间: ${new Date(data.timestamp).toLocaleString()}</p>
+                    <button class="delete-btn" onclick="deleteMessage('${data.id}', ${data.isPrivate})">删除</button> 
+                    <button class="copy-btn" onclick="copyContentFromList(this, '${data.id}', ${data.isPrivate})">复制/查看</button>
+                `;
+                
+                if (data.isPrivate) {
+                    const overlay = document.createElement("div");
+                    overlay.className = "blur-overlay";
+                    overlay.textContent = "点击输入密码查看/复制";
+
+                    overlay.onclick = async () => { 
+                        const inputPwd = prompt("请输入密码查看该内容：");
+                        
+                        if (inputPwd === null) return; 
+
+                        if (inputPwd === ULTIMATE_PASSWORD) {
+                            overlay.remove();
+                            messageDiv.querySelector('p').innerHTML = `内容: ${data.text}`;
+                            messageDiv.dataset.decryptedContent = data.text; 
+                            // 移除解密成功提示
+                            return;
+                        } 
+                        
+                        const hashedInput = await hashPassword(inputPwd); 
+                        
+                        if (hashedInput === data.password) {
+                            overlay.remove();
+                            messageDiv.querySelector('p').innerHTML = `内容: ${data.text}`;
+                            messageDiv.dataset.decryptedContent = data.text; 
+                            // 移除解密成功提示
+                        } else {
+                            showPasswordError(overlay);
+                        }
+                    };
+                    messageDiv.appendChild(overlay);
+                }
+
+                targetDiv.appendChild(messageDiv);
+            });
+
+            if (!latestPublicFound) {
+                latestPublicDiv.innerHTML = `<p style="color: #8e8e93;">暂无公开内容，请提交新内容。</p>`;
+                latestPublicDiv.dataset.content = "";
+            }
+            
+            [publicMessagesDiv, privateMessagesDiv].forEach(list => {
+                const cards = Array.from(list.children);
+                list.innerHTML = "";
+                cards.reverse().forEach(card => list.appendChild(card));
+            });
+            
+            if (publicMessagesDiv.children.length === 0) {
+                 publicMessagesDiv.innerHTML = `<p style="text-align: center; color: #8e8e93;">所有旧的未加密内容将显示在此处。</p>`;
+            }
+             if (privateMessagesDiv.children.length === 0) {
+                 privateMessagesDiv.innerHTML = `<p style="text-align: center; color: #8e8e93;">所有设置了密码的内容将显示在此处。</p>`;
+            }
+        });
+
+    </script>
 </body>
 </html>
