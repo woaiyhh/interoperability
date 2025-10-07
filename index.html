@@ -18,12 +18,12 @@
             color: #1d1d1f; /* 接近 Apple 的深色文字 */
         }
         .container {
-            max-width: 1200px; /* 进一步拓宽以容纳三列 */
+            max-width: 1200px;
             margin: auto;
             background: #ffffff;
             padding: 30px;
             border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); /* 柔和阴影 */
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
             text-align: left;
         }
         h2, h3 {
@@ -36,10 +36,10 @@
             width: 100%;
             padding: 12px;
             margin-bottom: 15px;
-            border: 1px solid #d2d2d7; /* 浅灰色边框 */
+            border: 1px solid #d2d2d7;
             border-radius: 8px;
             font-size: 16px;
-            box-sizing: border-box; /* 确保 padding 不影响宽度 */
+            box-sizing: border-box;
         }
         textarea {
             resize: vertical;
@@ -47,7 +47,7 @@
         }
         button {
             padding: 12px 20px;
-            background: #007aff; /* Apple Blue */
+            background: #007aff;
             color: white;
             border: none;
             border-radius: 8px;
@@ -176,9 +176,7 @@
             transition: opacity 0.3s;
         }
 
-        /* ------------------------------------- */
         /* Toast Notification 样式 */
-        /* ------------------------------------- */
         #toast-container {
             position: fixed;
             top: 20px;
@@ -218,6 +216,7 @@
         <h2>云端剪贴板</h2>
 
         <div class="input-area">
+            <input type="text" id="titleInput" placeholder="请输入内容标题/简介（可选）">
             <textarea id="messageInput" placeholder="输入内容..."></textarea>
             <input type="password" id="password" placeholder="设置查看密码（可选，留空则为公开）">
             <button onclick="submitMessage()">提交内容</button>
@@ -236,14 +235,14 @@
                 <div class="history-list">
                     <h3>旧公开内容</h3>
                     <div class="messages" id="publicMessages">
-                        <p style="text-align: center; color: #8e8e93;">所有旧的未加密内容将显示在此处。</p>
+                        <p style="text-align: center; color: #8e8e93;">所有旧的未加密内容将显示在此处</p>
                     </div>
                 </div>
                 
                 <div class="history-list">
                     <h3>加密内容</h3>
                     <div class="messages" id="privateMessages">
-                        <p style="text-align: center; color: #8e8e93;">所有设置了密码的内容将显示在此处。</p>
+                        <p style="text-align: center; color: #8e8e93;">所有设置了密码的内容将显示在此处</p>
                     </div>
                 </div>
             </div>
@@ -308,13 +307,13 @@
         // ------------------------------------
 
 
-        // 提交内容 (异步) - 成功时不提示
+        // 提交内容 (异步)：新增标题逻辑
         window.submitMessage = async function () {
+            const title = document.getElementById("titleInput").value.trim(); // 获取标题
             const message = document.getElementById("messageInput").value.trim();
             const password = document.getElementById("password").value.trim();
 
             if (!message) {
-                // 提交内容为空时，这是重要的流程中断错误，保留 alert
                 alert("内容不能为空！");
                 return;
             }
@@ -324,12 +323,13 @@
 
             const messageRef = push(ref(database, "clipboard"));
             set(messageRef, {
+                title: title, // 保存标题
                 text: message,
                 password: hashedPassword, 
                 timestamp: Date.now(),
                 isPrivate: isPrivate
             }).then(() => {
-                // 移除提交成功提示
+                document.getElementById("titleInput").value = ""; // 清空标题输入框
                 document.getElementById("messageInput").value = "";
                 document.getElementById("password").value = "";
             }).catch(error => {
@@ -347,7 +347,7 @@
 
             try {
                 await navigator.clipboard.writeText(textToCopy);
-                showToast("已成功复制到剪贴板"); // 保留成功提示
+                showToast("已成功复制到剪贴板"); 
             } catch (err) {
                 console.error('复制失败: ', err);
                 alert('复制失败，请手动选择复制');
@@ -367,7 +367,7 @@
             if (textToCopy) {
                  try {
                     await navigator.clipboard.writeText(textToCopy);
-                    showToast("复制成功"); // 保留成功提示
+                    showToast("已成功复制解密内容");
                 } catch (err) {
                     console.error('复制失败: ', err);
                     alert('复制失败，请手动选择复制');
@@ -379,9 +379,9 @@
                     if (data && !data.isPrivate) {
                         try {
                             await navigator.clipboard.writeText(data.text);
-                            showToast("已成功复制历史内容。"); // 保留成功提示
+                            showToast("已成功复制历史内容"); 
                         } catch (err) {
-                            alert('复制失败，请手动选择复制。');
+                            alert('复制失败，请手动选择复制');
                         }
                     }
                 }, { onlyOnce: true });
@@ -410,7 +410,6 @@
                 if (confirm("确定要删除这条公开内容吗？")) { 
                     const messageRef = ref(database, "clipboard/" + messageId);
                     remove(messageRef); 
-                    // 移除公开内容删除成功提示
                 }
                 return;
             }
@@ -421,14 +420,13 @@
             if (password === correctDeletePassword) {
                 const messageRef = ref(database, "clipboard/" + messageId);
                 remove(messageRef);
-                // 移除加密内容删除成功提示
             } else if (password !== null) { 
-                showToast("删除密码错误！"); // 保留失败提示
+                showToast("删除密码错误！"); 
             }
         };
 
 
-        // 渲染最新公开内容和历史记录
+        // 渲染最新公开内容和历史记录：使用标题进行展示
         const clipboardRef = ref(database, "clipboard");
         onValue(query(clipboardRef, limitToLast(50)), (snapshot) => { 
             const publicMessagesDiv = document.getElementById("publicMessages");
@@ -448,6 +446,7 @@
             });
 
             allMessages.reverse().forEach((data) => {
+                // 1. 处理最新剪贴板区域
                 if (!data.isPrivate && !latestPublicFound) {
                     latestPublicDiv.innerHTML = `<p style="font-size: 18px; font-weight: 600;">${data.text}</p>`;
                     latestPublicDiv.dataset.content = data.text; 
@@ -455,23 +454,27 @@
                     return; 
                 }
 
+                // 2. 渲染历史列表项
                 const messageDiv = document.createElement("div");
                 messageDiv.classList.add("message-card");
                 
                 let targetDiv = null;
-                let previewText = data.text.substring(0, 30) + (data.text.length > 30 ? "..." : "");
+                // 优先使用标题，如果标题为空，则截断内容作为简介
+                let displayTitle = data.title || data.text.substring(0, 30) + (data.text.length > 30 ? "..." : ""); 
+                let previewText = "内容详情..."; // 默认内容简介
 
                 if (data.isPrivate) {
                     messageDiv.classList.add("private");
                     targetDiv = privateMessagesDiv;
-                    previewText = "加密内容";
+                    previewText = "加密内容 (需解锁)"; 
                 } else {
                     messageDiv.classList.add("public");
                     targetDiv = publicMessagesDiv;
+                    previewText = data.text.substring(0, 30) + (data.text.length > 30 ? "..." : ""); // 公开内容显示部分内容
                 }
                 
                 messageDiv.innerHTML = `
-                    <p>内容: ${previewText}</p>
+                    <p style="font-weight: 600; margin-bottom: 5px; color: #1d1d1f;">标题: ${displayTitle}</p> <p style="font-size: 14px; color: ${data.isPrivate ? '#ff9500' : '#4a4a4a'};">内容: ${previewText}</p>
                     <p style="font-size: 12px; color: #8e8e93;">时间: ${new Date(data.timestamp).toLocaleString()}</p>
                     <button class="delete-btn" onclick="deleteMessage('${data.id}', ${data.isPrivate})">删除</button> 
                     <button class="copy-btn" onclick="copyContentFromList(this, '${data.id}', ${data.isPrivate})">复制/查看</button>
@@ -491,7 +494,6 @@
                             overlay.remove();
                             messageDiv.querySelector('p').innerHTML = `内容: ${data.text}`;
                             messageDiv.dataset.decryptedContent = data.text; 
-                            // 移除解密成功提示
                             return;
                         } 
                         
@@ -501,7 +503,6 @@
                             overlay.remove();
                             messageDiv.querySelector('p').innerHTML = `内容: ${data.text}`;
                             messageDiv.dataset.decryptedContent = data.text; 
-                            // 移除解密成功提示
                         } else {
                             showPasswordError(overlay);
                         }
