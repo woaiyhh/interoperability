@@ -208,6 +208,45 @@
             opacity: 1;
             transform: translateY(0);
         }
+
+        /* ... 保持原有的 CSS 样式 ... */
+
+/* 新增：移动端适配 (Media Query) */
+@media (max-width: 768px) {
+    /* 缩小整体容器宽度 */
+    .container {
+        padding: 20px;
+        margin: 10px;
+    }
+
+    /* 历史记录区域：从水平 Flex 改为垂直堆叠 */
+    .content-sections {
+        flex-direction: column; /* 主要区域垂直堆叠 */
+        gap: 25px; /* 增加区域间距 */
+    }
+    
+    /* 历史列表：垂直堆叠 */
+    .history-section {
+        flex-direction: column; /* 历史区内部垂直堆叠 */
+        gap: 25px;
+    }
+
+    /* 当前剪贴板：宽度占满 */
+    .current-clipboard-section {
+        flex: 1 1 100%;
+    }
+    
+    /* 历史列表：宽度占满 */
+    .history-list {
+        flex: 1 1 100%;
+    }
+    
+    /* 强调最新内容 */
+    #latestPublicMessage p {
+        font-size: 24px !important; /* 加大最新内容的字号 */
+        padding: 10px 0;
+    }
+}
     </style>
 </head>
 <body>
