@@ -161,6 +161,15 @@
         .blur-overlay:hover {
             opacity: 0.9;
         }
+        
+        /* ⭐ 新增样式：居中遮罩层的内容 */
+        .blur-overlay .overlay-content {
+            text-align: center;
+            padding: 10px; 
+            max-width: 90%; 
+            word-wrap: break-word;
+        }
+
         /* 错误反馈样式 - 保留用于局部的密码输入错误反馈 */
         .error-feedback {
             position: absolute;
@@ -522,7 +531,14 @@
                 if (data.isPrivate) {
                     const overlay = document.createElement("div");
                     overlay.className = "blur-overlay";
-                    overlay.textContent = "点击输入密码查看/复制";
+                    
+                    // ⭐ 修改点：使用 innerHTML 显示标题和提示
+                    overlay.innerHTML = `
+                        <div class="overlay-content">
+                            <p style="font-weight: 600; font-size: 16px; margin-bottom: 5px;">${displayTitle}</p>
+                            <p style="font-size: 14px; margin: 0;">点击输入密码查看/复制</p>
+                        </div>
+                    `;
 
                     overlay.onclick = async () => { 
                         const inputPwd = prompt("请输入密码查看该内容：");
