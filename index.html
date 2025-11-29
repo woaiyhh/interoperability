@@ -1,642 +1,696 @@
-<!DOCTYPE html>
-<html lang="zh">
+<html>
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>云端剪贴板 | Cloud Clipboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>还没想好这里写什么</title>
+    <link href="https://github.com/woaiyhh/interoperability/blob/main/屏幕截图%202024-03-28%20155002.png?raw=true" rel="SHORTCUT ICON">
     <style>
-        /* 字体、基础样式 */
+
+#welcome-heading {
+    position: relative;
+    left: -100%;
+    animation: slideIn 2s forwards;
+}
+
+@keyframes slideIn {
+    to {
+        left: 0;
+    }
+}
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "PingFang SC", "Microsoft YaHei";
-            background-color: #f5f5f7;
-            text-align: center;
-            padding: 20px 0;
-            color: #1d1d1f;
-            margin: 0;
-            line-height: 1.5;
-        }
-        .container {
-            max-width: 1200px;
-            width: 95%;
-            margin: auto;
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-            text-align: left;
-            box-sizing: border-box;
-        }
-        h2 { font-weight: 700; margin-top: 0; margin-bottom: 25px; }
-        h3 { font-weight: 600; margin-top: 0; margin-bottom: 15px; font-size: 18px; }
-        input[type="text"], input[type="password"], textarea {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid #d2d2d7;
-            border-radius: 8px;
-            font-size: 16px;
-            box-sizing: border-box;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        input:focus, textarea:focus { border-color: #007aff; }
-        textarea { resize: vertical; min-height: 100px; }
-        
-        /* 提交按钮 */
-        .submit-btn {
-            width: 100%;
-            padding: 14px 20px;
-            background: #007aff;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 17px;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
-            font-weight: 600;
-        }
-        .submit-btn:hover { background: #0066ff; }
-
-        /* -------------------- 布局分区 - 桌面端默认 -------------------- */
-        .content-sections {
-            display: flex;
-            gap: 20px;
-            margin-top: 30px;
-        }
-        .current-clipboard-section {
-            flex: 1;
-            min-width: 250px;
-            order: 1;
-            padding: 20px; /* 确保分区有内边距 */
-            border-radius: 10px;
-            background-color: #ffffff;
-            border: 1px solid #d2d2d7;
-        }
-        /* 最新剪贴板的操作区域 */
-        .latest-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .copy-btn-latest { /* 适配最新内容的一键复制按钮 */
-            flex-grow: 1; /* 按钮占据剩余空间 */
-            padding: 12px;
-            background: #34c759;
-            color: white;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .copy-btn-latest:hover { background: #2cb742; }
-
-        .delete-btn-latest { /* 最新内容的删除按钮 */
-            width: 80px; /* 固定宽度，避免删除按钮过大 */
-            padding: 12px;
-            background: #ff3b30;
-            color: white;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .delete-btn-latest:hover { background: #cc2925; }
-
-        .history-section {
-            flex: 2;
-            display: flex;
-            gap: 20px;
-            order: 2;
-        }
-        .history-list {
-            flex: 1;
-            padding: 20px;
-            border-radius: 10px;
-            background-color: #ffffff;
-            border: 1px solid #d2d2d7;
-        }
-        .messages {
-            margin-top: 15px;
-            max-height: 450px;
-            overflow-y: auto;
-            padding: 10px;
-            border-radius: 8px;
-            background: #f7f7f7;
-            border: 1px solid #e0e0e5;
-        }
-
-        /* -------------------- 单个留言卡片优化 -------------------- */
-        .message-card {
-            background: #ffffff;
-            padding: 15px;
-            margin-bottom: 12px;
-            border-radius: 8px;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-            position: relative;
-        }
-        /* 修复最新内容和历史列表内容溢出问题 */
-        .message-card p {
-            margin: 5px 0;
-            word-wrap: break-word; 
-            word-break: break-all;
+            background-image: url('https://github.com/woaiyhh/interoperability/blob/main/14%20-%20Blue.png?raw=true');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
         
-        /* 专门针对最新内容卡片中的文本（最新内容卡片没有其他 P 标签）*/
-        #latestPublicMessage p {
-            font-size: 18px; 
-            font-weight: 600;
-            /* 确保这里的 p 标签也正确换行 */
-            word-wrap: break-word; 
-            word-break: break-all;
+        
+                h1 {
+                    text-align: center;
+                    color: #333;
+                    opacity: 0;
+                    transform: translateY(-20px);
+                    transition: opacity 3s ease, transform 3s ease;
+                }
+        
+                h2 {
+                    color: #555;
+                }
+        
+                .container {
+                    max-width: 800px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    background-color: #ffffffbd;
+                    border-radius: 5px;
+                    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                }
+        
+                .page-intro {
+                    border: 1px solid #ddd;
+                    border-radius: 5px;
+                    padding: 20px;
+                    margin-bottom: 20px;
+                }
+        
+                ul {
+                    list-style-type: none;
+                    padding: 0;
+                }
+        
+                li {
+                    margin-bottom: 20px;
+                    border: 1px solid #ddd;
+                    padding: 10px;
+                    border-radius: 5px;
+                }
+        
+                a {
+                    text-decoration: none;
+                    color: #0077cc;
+                }
+        
+                a:hover {
+                    text-decoration: underline;
+                }
+        
+                p {
+                    color: #666;
+                }
+        
+                input[type="text"] {
+                    width: 100%;
+                    padding: 10px;
+                    margin-bottom: 20px;
+                    border: 1px solid #dddddd5a;
+                    border-radius: 5px;
+                }
+        
+                .search-button {
+                    background-color: #0077cc;
+                    color: #fff;
+                    padding: 10px 20px;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                }
+        
+                .return-button {
+                    background-color: #ccc;
+                    color: #fff;
+                    padding: 10px 20px;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                }
+        
+                .footer {
+                    text-align: center;
+                    margin-top: 20px;
+                    color: #777;
+                }
+        
+            
+        
+                .选个颜色 {
+            color: rgb(156, 73, 73);
         }
         
-        .card-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            margin-top: 10px;
-            padding-top: 5px;
-            border-top: 1px dashed #e0e0e5;
-        }
-        /* 列表操作按钮 */
-        .action-btn {
-            padding: 8px 14px;
-            font-size: 14px;
-            border-radius: 6px;
-            font-weight: 500;
-            cursor: pointer;
-            border: none;
-            transition: background 0.2s;
-            margin-left: 8px;
-        }
-        .copy-btn-list { background: #5ac8fa; }
-        .copy-btn-list:hover { background: #4ab3e6; }
-        .delete-btn { background: #ff3b30; }
-        .delete-btn:hover { background: #cc2925; }
+        
+        /* 新增样式：浮动窗口 */
+        .floating-tutorial {
+    position: fixed;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    z-index: 999;
+    background-color: rgb(255, 255, 255);
+    padding: 20px;
+    border: 1px solid #ccc;
+    max-width: 300px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    opacity: 0; /* 初始状态透明 */
+    visibility: hidden; /* 初始状态不可见 */
+    transition: opacity 0.5s ease, visibility 0.5s ease; /* 过渡效果 */
+}
 
-        /* 密码遮罩 */
-        .blur-overlay {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(5px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #8e8e93;
-            font-weight: 500;
-            border-radius: 8px;
-            z-index: 10;
-            cursor: pointer;
-            transition: opacity 0.3s;
-            text-align: center;
-        }
-        .blur-overlay .overlay-content {
-            padding: 15px;
-            max-width: 90%;
-            word-wrap: break-word;
-            word-break: break-all;
-        }
+/* 当浮窗显示时的状态 */
+.floating-tutorial.show {
+    opacity: 1; /* 完全显示 */
+    visibility: visible; /* 改为可见 */
+}
 
-        /* -------------------- Toast Notification 样式 -------------------- */
-        #toast-container {
+        /* 按钮样式 */
+        .toggle-button {
             position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 2000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .toast {
-            min-width: 250px;
+            left: 20px; /* 改为贴在左边 */
+            z-index: 999;
+            background-color: #0077cc96;
+            color: #fff;
             padding: 10px 20px;
-            margin-bottom: 10px;
-            background-color: rgba(0, 0, 0, 0.85);
-            color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            opacity: 0;
-            transition: opacity 0.3s, transform 0.3s;
-            transform: translateY(-20px);
-            font-size: 15px;
-            font-weight: 500;
-            text-align: center;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
         }
-        .toast.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* -------------------- 响应式设计 (Media Queries) -------------------- */
-        @media (max-width: 768px) {
-            body { padding: 10px 0; }
-            .container { padding: 15px; width: 98%; border-radius: 0; box-shadow: none; }
-            
-            /* 主要区域垂直堆叠 */
-            .content-sections { flex-direction: column; gap: 20px; margin-top: 20px; }
-            
-            .current-clipboard-section {
-                flex: 1 1 100%;
-                padding: 15px; /* 调整分区内边距 */
-            }
-            .history-section {
-                flex-direction: column;
-                gap: 20px;
-                padding: 0;
-                border: none;
-                background: transparent;
-            }
-            .history-list {
-                flex: 1 1 100%;
-                padding: 15px;
-            }
-            .messages { max-height: 400px; padding: 8px; }
-            
-            /* 增大最新内容的字号 */
-            #latestPublicMessage p {
-                font-size: 20px !important; 
-                font-weight: 700 !important;
-                padding: 5px 0;
-            }
-            
-            /* 最新内容操作区域 */
-            .latest-actions { flex-direction: column; gap: 8px; }
-            .copy-btn-latest { flex-grow: unset; width: 100%; }
-            .delete-btn-latest { width: 100%; }
-
-            /* 历史卡片操作区域 */
-            .card-actions { flex-direction: column; align-items: flex-start; }
-            .card-actions p { margin-bottom: 5px; }
-            .action-btn {
-                width: 100%;
-                margin-left: 0;
-                margin-top: 8px;
-                padding: 10px 14px;
-            }
-        }
-    </style>
+            </style>
 </head>
 <body>
-    <div id="toast-container"></div>
+
+<!-- 按钮 -->
+<button class="toggle-button" onclick="toggleTutorial()">显示教程</button>
+
+
+
+
+
     <div class="container">
-        <h2>云端剪贴板</h2>
+        <h1 id="welcome-heading">欢迎你！</h1>
 
-        <div class="input-area">
-            <input type="text" id="titleInput" placeholder="请输入内容标题/简介（可选）">
-            <textarea id="messageInput" placeholder="输入内容..."></textarea>
-            <input type="password" id="password" placeholder="设置查看密码（可选，留空则为公开）"> 
-            <button class="submit-btn" onclick="submitMessage()">提交内容</button>
+        <div class="page-intro">
+            <h3>天气多云</h3>
+            <p id="real-time"></p>
+                <br>最近网页更新日期：2025年11月27日
+            <br>更新内容：变更了下载地址顺便换了个壁纸～
+            <br>!近期大范围更新了各安装包安装路径，打开下载链接可能速度较慢，如遇任何问题请尽快通过网页最下方反馈处进行反馈!
+            </p>
         </div>
+        
+        <div class="announcement">
+            <h2>注意：</h2>
+            <p>为确保安全的下载，请注意以下事项：</p>
+            <ul>
+                <li> -  如果你持有本网页网址，请勿以任何形式用任何方式传播
+                <br> -  除已经过证实的下载链接外，不要随意下载、安装来历不明的应用，以免造成手机系统安全隐患。
+                <br> -  请谨慎使用VPN，确保选择安全、可信赖的套餐节点。如若暂无可运行的VPN，请联系他人取得协助。
+                </li>
+            </ul>
+            <ul><li>为避免使用VPN才可下载的繁杂过程,所有安装包均采用安全云盘的下载链接,部分安装包点击下载后将跳转至其他网页,如遇到安装问题,请点击屏幕左侧按钮查看操作教程或通过网页最下方反馈获取协助</li></ul>
 
-        <div class="content-sections">
+            <div class="floating-tutorial">
+                <h2>当点击链接后到下载网站时</h2>
+                <p>第一步</p>
+                <p><img src="https://i.postimg.cc/SRxRDHTr/mmexport1710779583092.jpg" height="200px"></p>
+                <p>点击绿色图标"Accept all"</p>
+                <p>第二步</p>
+                <img src="https://i.postimg.cc/GmVD9371/mmexport1710779578736.png">
+                <p>点击此字样下载</p>
+            </div>
+
             
-            <div class="current-clipboard-section">
-                <h3>当前剪贴板 (最新公开内容)</h3>
-                <div id="latestPublicMessage" class="message-card public">
-                    <p style="color: #8e8e93;">等待内容同步...</p>
-                </div>
-                <div class="latest-actions">
-                    <button class="copy-btn-latest" onclick="copyLatestContent()">一键复制</button>
-                    <button class="delete-btn-latest" onclick="deleteLatestPublicMessage()">删除</button>
-                </div>
-            </div>
-
-            <div class="history-section">
-                
-                <div class="history-list">
-                    <h3>旧公开内容</h3>
-                    <div class="messages" id="publicMessages">
-                        <p style="text-align: center; color: #8e8e93;">所有旧的未加密内容将显示在此处</p>
-                    </div>
-                </div>
-                
-                <div class="history-list">
-                    <h3>加密内容</h3>
-                    <div class="messages" id="privateMessages">
-                        <p style="text-align: center; color: #8e8e93;">所有设置了密码的内容将显示在此处</p>
-                    </div>
-                </div>
-            </div>
         </div>
+        
+        <h2>可用的安装包：</h2>
+        <input type="text" id="search" placeholder="搜索安装包">
+        <button class="search-button" onclick="searchPackages()">搜索</button>
+        <button class="return-button" onclick="returnToAllPackages()">返回</button>
+
+        <ul id="package-list">
+            <h2>以下为适用于Android系统手机的APK格式安装包：</h2>
+               <li>
+                <h3><a href="https://www.jottacloud.com/s/3275de9e61da82d440ab7c1540cbcff7c88">Chattti</a></h3>
+                <p>描述：来自Chattti
+                    <br>优越的隐私
+                    <br><b>请注意</b>:此安装包适用于Android 6.0及更高版本
+                </p>
+                <p>版本：
+                    <br>下载大小：27MB
+                    <br>最近更新日期:2024年12月24日
+                </p>
+            </li>
+            <li>
+                <h3><a href="https://jottacloud.com/s/327abc750d5c0a349c0922f8098595d40e7">xPal</a></h3>
+                <p>描述：来自XPAL.com Corporation
+                    <br>隐私。安全。匿名。
+                    <br><b>请注意</b>:此安装包适用于Android 8.0及更高版本
+                </p>
+                <p>版本：5.3.1
+                    <br>下载大小：90MB
+                    <br>最近更新日期:2025年11月27日
+                </p>
+            </li>
+<li>
+                <h3><a href="https://www.jottacloud.com/s/3273fe02585ee114b46988d803a1d4977a6">Clash Meta for Android</a></h3>
+                <p>描述：来自GitHub
+                    <br>VPN代理
+                    <br><b>请注意</b>:此安装包适用于Android 8.0及更高版本
+                </p>
+                <p>版本：
+                    <br>下载大小：57.8MB
+                    <br>最近更新日期:2025年1月12日
+                </p>
+</li>
+            <li>
+                <h3><a href="https://www.webex.com/content/dam/wbx/us/images/downloads/rebrand/mc.apk">Webex Meetings</a></h3>
+                <p>描述：来自Cisco Systems, Inc
+                    <br>使用适用于 Android 的 Webex Meetings 和适用于 Chrome 操作系统的 PWA 随时随地工作！<br>随时随地见面。享受丰富的会议体验，包括背景噪音消除、高品质视频、集成音频和移动内容共享。
+                    <br><b>请注意</b>:此安装包仅适用于Android 8.0及更高版本
+                </p>
+                <p>版本：实时
+                    <br>下载大小：? MB
+                    <br>最近更新日期:?年?月?日
+                </p>
+            </li>
+            <li>
+                <h3><a href="https://www.webex.com/content/dam/wbx/us/images/downloads/rebrand/uc.apk">Webex</a></h3>
+                <p>描述：来自Cisco Systems, Inc
+                    <br>用于进行会议，当会议前的准备工作完成后将会自动跳转至此软件。需搭配Webex Meetings一起使用。
+                    <br><b>请注意</b>:此安装包仅适用于Android 8.0及更高版本
+                </p>
+                <p>版本：实时
+                    <br>下载大小：? MB
+                    <br>最近更新日期:?年?月?日
+                </p>
+            </li>
+            <li>
+                <h3><a href="https://jottacloud.com/s/32789df5b69aa864bf0820e883e9cf0db0a">Zoom</a></h3>
+                <p>描述：来自zoom.us
+                    <br>用于进行会议。
+                    <br><b>请注意</b>:此安装包仅适用于Android 6.0 及更高版本
+                </p>
+                <p>版本：6.6.10.35063                    
+                    <br>下载大小：134 MB
+                    <br>最近更新日期:2025年11月27日
+                </p>
+            </li>
+            <li>
+                <h3><a href="https://www.jottacloud.com/s/327f19b23ac36594f55891be7d603a6a8f8">Clash For Android</a></h3>
+                <p>描述：VPN软件
+                    <br><b>请注意</b>:此安装包仅适用于Android 5.0及更高版本
+                </p>
+                <p>版本：2.5.12.premium
+                    <br>下载大小：36 MB
+                <br>最近更新日期:2024年6月5日
+                </p>
+                
+            </li>
+            <li>
+                <h3><a href="https://jottacloud.com/s/327ec3bc21118934a969d73ec062bbeceff">Lithium</a></h3>
+                <p>描述：来自FaultException
+                    <br>阅读您的手机上或平板电脑上的书籍与此EPUB阅读器。
+                    <br><b>请注意</b>:此安装包仅适用于Android 4.1及更高版本
+                </p>
+                <p>版本：0.24.6.1
+                    <br>下载大小：7.1 MB
+                        <br>最近更新日期:2025年11月27日
+                </p>
+                        
+            </li>
+
+             <li>
+                <h3><a href="https://jottacloud.com/s/327663d003aa0f746ef8cc3618503443fe3">Zangi</a></h3>
+                <p>描述：来自Secret Phone, Inc
+                    <br>Zangi进行免费的高清品质语音和视频通话，以及免费聊天。
+                    <br><b>请注意</b>:此安装包仅适用于Android 6.0及更高版本
+                </p>
+                <p>版本：6.3.7
+                    <br>下载大小：46.2 MB
+                    <br>最近更新日期:2025年11月27日
+                </p>
+            </li>
+
+            <li>
+                <h3><a href="https://jottacloud.com/s/327f289b8efeecd45448aecc08d0e5665e2">jwlb_E</a></h3>
+                <p>描述：来自万豪酒店
+                    <br>
+                    <br><b>请注意</b>:此安装包仅适用于Android 7.0及更高版本
+                </p>
+                <p>版本：15.5.1
+                    <br>下载大小：101 MB
+                    <br>最近更新日期:2025年11月28日
+                </p>
+            </li>
+
+            <li>
+                <h3><a href="https://jottacloud.com/s/327317cf5f9341a42e383f9e4566a747cc6">Google Chrome</a></h3>
+                <p>描述：来自Google LLC
+                    <br>快速、安全  Google Chrome 浏览器可帮助您在 Android 手机和平板电脑上快速安全地上网。
+                    <br><b>请注意</b>:此安装包仅适用于Android 10.0及更高版本
+                </p>
+                <p>版本：142.0.7444.171
+                    <br>下载大小：12 MB
+                    <br>最近更新日期:2025年11月27日
+                </p>
+            </li>
+
+            <li>
+                <h3><a href="https://www.jottacloud.com/s/3278afb363e432b4c17ae8241fc9200080a">twin me</a></h3>
+                <p>描述：来自twinlife
+                    <br>对等网络端到端加密聊天、语音/视频通话，无需登录。
+                    <br><b>请注意</b>:此安装包仅适用于Android 5.0及更高版本
+                </p>
+                <p>版本：23.6
+                    <br>下载大小：39 MB
+                    <br>最近更新日期:2024年6月5日
+                </p>
+            </li>
+
+            <li>
+                <h3><a href="https://www.jottacloud.com/s/327e22d0db575c64fd3b0e5fca534a45201">Kedr</a></h3>
+                <p>描述：来自apkpure
+                    <br>
+                    <br><b>请注意</b>:暂无
+                </p>
+                <p>版本：暂无
+                    <br>下载大小：
+                    <br>最近更新日期:2024年11月24日
+                </p>
+            </li>
+
+
+
+            <h2>以下为适用于Windows系统电脑的exe格式安装包：</h2>
+            <li>
+                <h3><a href=https://binaries.webex.com/WebexTeamsDesktop-Windows-Web-Installer/Webex.exe>Webex For Windows (64 bit)</a></h3>
+                <p>描述：来自Cisco Systems, Inc
+                    <br>用于安排会议、开始会议等一系列操作
+                    <br><b></b>
+                </p>
+
+
+                <p>版本：43.12.0.28111
+                    <br>最近更新日期:2023年12月8日
+                </p>
+            </li>
+
+
+            <li>
+                <h3><a href=https://zoom.us/client/5.17.1.28914/ZoomInstallerFull.exe?archType>Zoom For Windows (64 bit)</a></h3>
+                <p>描述：来自zoom.us
+                    <br>用于进行会议。
+                    <br><b></b>
+                </p>
+                <p>版本：5.17.1 (28914)
+                    <br>最近更新日期:2024年1月4日
+                </p>
+            </li>
+
+
+            <li>
+                <h3><a href=https://filetransfer.io/data-package/gmO57umA#link>Clash For Windows (64 bit)</a></h3>
+                <p>描述：来自www.clashforwindows.net/clash-for-windows-download/
+                    <br>用于Windows的VPN软件。
+                    <br><b></b>
+                </p>
+                <p>版本：0.20.39
+                    <br>最近更新日期:
+                </p>
+            </li>
+
+            <h2>以下为适用于Mac系统电脑的dmg格式安装包：</h2>
+            <li>
+                <h3><a href=https://www.jottacloud.com/s/3270a8d586e25e54bb3b881b5874e8eeda4 target="_top">ClashX Pro</a></h3>
+                <p>描述：适用于Mac系统的VPN软件
+                    <br>
+                    <br><b></b>
+                </p>
+                <p>版本：1.98.0.3
+                    <br>最近更新日期:
+                </p>
+            </li>
+        </ul>
+
+        <br>
+        <br>
+
+        <div class="">
+            <h2>常用链接：</h2>
+            <h3>灰色链接请复制后在安全的浏览器中打开，蓝色链接点击即可进入</h3>
+            <p>当通过浏览器进入Zoom会议： <a href="https://zoom.us/join">https://zoom.us/join</a></p>
+            <p>当通过浏览器进入Webex会议： <a href="https://signin.webex.com/join">https://signin.webex.com/join</a></p>
+            <br>
+            <p>注：以下出版物均采用<b>中文简体（普通话）</b>作为参考语言</p>
+            <p><a href="https://download-a.akamaihd.net/files/media_publication/c5/nwt_CHS.epub">智慧话语（2019年修订版）EPUB格式下载</a></p>
+            <p>最近更新日期：2024年6月5日</p>
+            
+            <p><a href="https://download-a.akamaihd.net/files/media_publication/00/lff_CHS.epub">永远享受EPUB格式下载</a></p>
+            <p>最近更新日期：2024年3月15日</p>
+            
+            <p><a href="https://download-a.akamaihd.net/files/media_publication/0c/lffi_CHS.epub">永远享受体验版EPUB格式下载</a></p>
+            <p>最近更新日期：2023年4月18日</p>
+            <br>
+        </div>
+
+
+        <style>
+            .feedback-container {
+                background-color: #ffffff8e;
+                padding: 20px;
+                border-radius: 5px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                margin-top: 20px;
+            }
+    
+            .feedback-container h2 {
+                color: #333;
+            }
+    
+            .feedback-container form {
+                display: flex;
+                flex-direction: column;
+            }
+    
+            .feedback-container label {
+                margin-bottom: 5px;
+                font-weight: bold;
+            }
+    
+            .feedback-container input,
+            .feedback-container textarea {
+                margin-bottom: 10px;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                box-sizing: border-box;
+            }
+    
+            .feedback-container input[type="submit"] {
+                background-color: #0077cc;
+                color: #fff;
+                cursor: pointer;
+                border: none;
+                border-radius: 5px;
+                padding: 10px;
+            }
+    
+            .feedback-container input[type="submit"]:hover {
+                background-color: #005fa3;
+            }
+        </style>
+    </head>
+    <body>
+    
+    <div class="feedback-container">
+        <h2>反馈/留言</h2>
+        <form action="https://formspree.io/f/mqkrvwwq" method="post">
+            <label for="name">姓名:</label>
+            <input type="text" id="name" name="name" required>
+            <br>
+            <label for="contact">任意联系方式:</label>
+        <input type="text" id="contact" name="contact" required>
+        <br>
+            <label for="message">反馈/留言信息:</label>
+            <textarea id="message" name="message" rows="4" required oninput="adjustTextareaHeight(this)"></textarea>
+            <br>
+            <input type="submit" value="发送反馈/留言">
+        </form>
+    </div>
+    
+    <script>
+        function adjustTextareaHeight(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+    </script>
+
+
+
+    <div class="footer">
+        <!-- <p>🚞🚃🚃🚃💨</p> -->
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
-        import { getDatabase, ref, push, set, onValue, query, limitToLast, remove } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-database.js";
-
-        // 🚨 重要：这是终极密码
-        const ULTIMATE_PASSWORD = "myUltimateKey123"; 
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyDsZ-VZ7lzklLTlfizbSeVMEC5QjdLnhrY",
-            authDomain: "interoperability-b22f0.firebaseapp.com",
-            databaseURL: "https://interoperability-b22f0-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "interoperability-b22f0",
-            storageBucket: "interoperability-b22f0.appspot.com",
-            messagingSenderId: "697557753503",
-            appId: "1:697557753503:web:51b241fb83083ba32bccaa"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-        
-        let latestPublicMessageId = null; // 存储最新的公开消息ID
-
-        // --- 核心安全: SHA-256 哈希函数 ---
-        async function hashPassword(password) {
-            // (函数体保持不变)
-            if (!password) return "";
-            const encoder = new TextEncoder();
-            const data = encoder.encode(password);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-            return hashHex;
+    <script>
+        window.onload = function () {
+            var welcomeHeading = document.getElementById("welcome-heading");
+            welcomeHeading.style.opacity = "1";
+            welcomeHeading.style.transform = "translateY(0)";
         }
-        // ------------------------------------
 
-        // --- Toast Notification 辅助函数 ---
-        function showToast(message, duration = 2000) {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.textContent = message;
-            container.appendChild(toast);
+        function searchPackages() {
+            var input = document.getElementById("search").value.toLowerCase();
+            var packageList = document.getElementById("package-list");
+            var packages = packageList.getElementsByTagName("li");
 
-            setTimeout(() => { toast.classList.add('show'); }, 10); 
-
-            setTimeout(() => {
-                toast.classList.remove('show');
-                toast.addEventListener('transitionend', () => { toast.remove(); }, { once: true });
-            }, duration);
-        }
-        // ------------------------------------
-
-        // 提交内容 (异步) - 保持不变
-        window.submitMessage = async function () {
-            // (函数体保持不变)
-            const title = document.getElementById("titleInput").value.trim();
-            const message = document.getElementById("messageInput").value.trim();
-            const password = document.getElementById("password").value.trim();
-
-            if (!message) {
-                showToast("内容不能为空！", 3000);
-                return;
-            }
-
-            const hashedPassword = await hashPassword(password);
-            const isPrivate = !!password; 
-
-            const messageRef = push(ref(database, "clipboard"));
-            set(messageRef, {
-                title: title,
-                text: message,
-                password: hashedPassword, 
-                timestamp: Date.now(),
-                isPrivate: isPrivate
-            }).then(() => {
-                document.getElementById("titleInput").value = "";
-                document.getElementById("messageInput").value = "";
-                document.getElementById("password").value = "";
-                showToast("内容提交成功！");
-            }).catch(error => {
-                console.error("提交失败: ", error);
-                showToast("提交失败，请检查网络或配置", 3000);
-            });
-        };
-
-        // 一键复制最新内容 - 保持不变
-        window.copyLatestContent = async function() {
-            // (函数体保持不变)
-            const latestDiv = document.getElementById("latestPublicMessage");
-            const textToCopy = latestDiv.dataset.content || "";
-            
-            if (!textToCopy) {
-                showToast("当前剪贴板内容为空", 2000);
-                return;
-            }
-
-            try {
-                await navigator.clipboard.writeText(textToCopy);
-                showToast("已成功复制到剪贴板"); 
-            } catch (err) {
-                console.error('复制失败: ', err);
-                showToast('复制失败，请手动选择复制', 3000);
-            }
-        };
-
-        // ⭐ 新增：删除最新公开内容函数
-        window.deleteLatestPublicMessage = function() {
-            if (!latestPublicMessageId) {
-                showToast("当前剪贴板中没有公开内容可删除", 2000);
-                return;
-            }
-
-            if (confirm("确定要删除当前最新的公开内容吗？")) {
-                const messageRef = ref(database, "clipboard/" + latestPublicMessageId);
-                remove(messageRef).then(() => {
-                    showToast("最新公开内容删除成功");
-                }).catch(() => {
-                     showToast("删除失败！", 3000);
-                });
-            }
-        };
-
-
-        // 列表中的复制按钮功能 - 保持不变
-        window.copyContentFromList = async function(button, messageId, isPrivate) {
-            // (函数体保持不变)
-            const messageCard = button.closest('.message-card');
-            let textToCopy = messageCard.dataset.decryptedContent;
-
-            if (isPrivate && !textToCopy) {
-                showToast("请先解锁内容再进行复制", 2000);
-                return;
-            }
-            
-            if (textToCopy) {
-                try {
-                    await navigator.clipboard.writeText(textToCopy);
-                    showToast("已成功复制解密内容");
-                } catch (err) {
-                    console.error('复制失败: ', err);
-                    showToast('复制失败，请手动选择复制', 3000);
-                }
-            } else {
-                const messageRef = ref(database, "clipboard/" + messageId);
-                onValue(messageRef, async (snapshot) => {
-                    const data = snapshot.val();
-                    if (data && !data.isPrivate) {
-                        try {
-                            await navigator.clipboard.writeText(data.text);
-                            showToast("已成功复制历史内容"); 
-                        } catch (err) {
-                            showToast('复制失败，请手动选择复制', 3000);
-                        }
-                    }
-                }, { onlyOnce: true });
-            }
-        };
-
-
-        // 删除留言函数 (历史列表) - 保持不变
-        window.deleteMessage = function (messageId, isPrivate) {
-            // (函数体保持不变)
-            if (!isPrivate) { 
-                if (confirm("确定要删除这条公开内容吗？")) { 
-                    const messageRef = ref(database, "clipboard/" + messageId);
-                    remove(messageRef).then(() => {
-                        showToast("公开内容删除成功");
-                    }).catch(() => {
-                         showToast("删除失败！", 3000);
-                    });
-                }
-                return;
-            }
-            
-            const password = prompt("这是加密内容。请输入删除密码：");
-            const correctDeletePassword = "19142"; 
-            
-            if (password === correctDeletePassword) {
-                const messageRef = ref(database, "clipboard/" + messageId);
-                remove(messageRef).then(() => {
-                    showToast("加密内容删除成功");
-                }).catch(() => {
-                    showToast("删除失败！", 3000);
-                });
-            } else if (password !== null) { 
-                showToast("删除密码错误！", 3000); 
-            }
-        };
-
-
-        // 渲染最新公开内容和历史记录：使用标题进行展示
-        const clipboardRef = ref(database, "clipboard");
-        onValue(query(clipboardRef, limitToLast(50)), (snapshot) => { 
-            const publicMessagesDiv = document.getElementById("publicMessages");
-            const privateMessagesDiv = document.getElementById("privateMessages");
-            const latestPublicDiv = document.getElementById("latestPublicMessage");
-            
-            publicMessagesDiv.innerHTML = "";
-            privateMessagesDiv.innerHTML = "";
-            latestPublicMessageId = null; // 重置最新的公开消息ID
-
-            let latestPublicFound = false;
-            const allMessages = [];
-
-            snapshot.forEach((childSnapshot) => {
-                const data = childSnapshot.val();
-                data.id = childSnapshot.key;
-                allMessages.push(data);
-            });
-
-            allMessages.reverse().forEach((data) => {
-                
-                // 1. 处理最新剪贴板区域
-                if (!data.isPrivate && !latestPublicFound) {
-                    latestPublicDiv.style.borderLeftColor = "#34c759"; 
-                    // 确保这里的 P 标签的样式应用到位
-                    latestPublicDiv.innerHTML = `<p style="font-size: 18px; font-weight: 600; color: #1d1d1f;">${data.text}</p>`;
-                    latestPublicDiv.dataset.content = data.text; 
-                    latestPublicMessageId = data.id; // 存储ID用于删除
-                    latestPublicFound = true;
-                    return; 
-                }
-
-                // 2. 渲染历史列表项
-                const messageDiv = document.createElement("div");
-                messageDiv.classList.add("message-card");
-                
-                let targetDiv = null;
-                
-                let displayTitle = data.title || data.text.substring(0, 30) + (data.text.length > 30 ? "..." : ""); 
-                let previewText = "";
-
-                if (data.isPrivate) {
-                    messageDiv.classList.add("private");
-                    messageDiv.style.borderLeftColor = "#ff9500";
-                    targetDiv = privateMessagesDiv;
-                    previewText = "加密内容 (需解锁)"; 
+            for (var i = 0; i < packages.length; i++) {
+                var packageName = packages[i].getElementsByTagName("h3")[0].textContent.toLowerCase();
+                if (packageName.includes(input)) {
+                    packages[i].style.display = "block";
                 } else {
-                    messageDiv.classList.add("public");
-                    messageDiv.style.borderLeftColor = "#5ac8fa";
-                    targetDiv = publicMessagesDiv;
-                    previewText = data.text.substring(0, 50) + (data.text.length > 50 ? "..." : ""); 
+                    packages[i].style.display = "none";
                 }
-                
-                messageDiv.innerHTML = `
-                    <p style="font-weight: 600; margin-bottom: 5px; color: #1d1d1f;">标题: ${displayTitle}</p>
-                    <p style="font-size: 14px; color: ${data.isPrivate ? '#ff9500' : '#4a4a4a'};">内容: ${previewText}</p>
-                    <div class="card-actions">
-                        <p style="font-size: 12px; color: #8e8e93; margin: 0;">时间: ${new Date(data.timestamp).toLocaleString()}</p>
-                        <div>
-                            <button class="action-btn copy-btn-list" onclick="copyContentFromList(this, '${data.id}', ${data.isPrivate})">复制/查看</button>
-                            <button class="action-btn delete-btn" onclick="deleteMessage('${data.id}', ${data.isPrivate})">删除</button> 
-                        </div>
-                    </div>
-                `;
-                
-                if (data.isPrivate) {
-                    const overlay = document.createElement("div");
-                    overlay.className = "blur-overlay";
-                    
-                    overlay.innerHTML = `
-                        <div class="overlay-content">
-                            <p style="font-weight: 600; font-size: 16px; margin-bottom: 5px;">${displayTitle}</p>
-                            <p style="font-size: 14px; margin: 0;">点击输入密码查看/复制</p>
-                        </div>
-                    `;
-
-                    overlay.onclick = async (e) => {
-                        if (e.target.closest('.action-btn')) return;
-
-                        const inputPwd = prompt("请输入密码查看该内容：");
-                        
-                        if (inputPwd === null) return; 
-
-                        if (inputPwd === ULTIMATE_PASSWORD) {
-                            overlay.remove();
-                            messageDiv.querySelector('p:nth-child(2)').innerHTML = `内容: ${data.text}`;
-                            messageDiv.dataset.decryptedContent = data.text; 
-                            return;
-                        } 
-                        
-                        const hashedInput = await hashPassword(inputPwd); 
-                        
-                        if (hashedInput === data.password) {
-                            overlay.remove();
-                            messageDiv.querySelector('p:nth-child(2)').innerHTML = `内容: ${data.text}`;
-                            messageDiv.dataset.decryptedContent = data.text; 
-                        } else {
-                            showToast("密码错误！", 2000);
-                        }
-                    };
-                    messageDiv.appendChild(overlay);
-                }
-
-                targetDiv.appendChild(messageDiv);
-            });
-
-            // 处理最新内容为空的情况
-            if (!latestPublicFound) {
-                latestPublicDiv.style.borderLeftColor = "#d2d2d7";
-                latestPublicDiv.innerHTML = `<p style="color: #8e8e93;">暂无公开内容，请提交新内容</p>`;
-                latestPublicDiv.dataset.content = "";
             }
+        }
+
+        function returnToAllPackages() {
+            var packageList = document.getElementById("package-list");
+            var packages = packageList.getElementsByTagName("li");
+
+            for (var i = 0; i < packages.length; i++) {
+                packages[i].style.display = "block";
+            }
+        }
+        
+        function updateRealTime() {
+    var realTimeElement = document.getElementById("real-time");
+    var currentTime = new Date();
+    var year = currentTime.getFullYear();
+    var month = currentTime.getMonth() + 1; // 月份从0开始，所以要加1
+    var day = currentTime.getDate();
+    var hours = currentTime.getHours();
+    var minutes = currentTime.getMinutes();
+    var seconds = currentTime.getSeconds();
+
+    // 格式化时间，确保单个数字前面有零
+    month = (month < 10) ? "0" + month : month;
+    day = (day < 10) ? "0" + day : day;
+    hours = (hours < 10) ? "0" + hours : hours;
+    minutes = (minutes < 10) ? "0" + minutes : minutes;
+    seconds = (seconds < 10) ? "0" + seconds : seconds;
+
+    var formattedTime = year + "-" + month + "-" + day + " " + hours + ":" + minutes + ":" + seconds;
+    realTimeElement.textContent = "当前时间：" + formattedTime;
+}
+
+function toggleTutorial() {
+    var tutorial = document.querySelector('.floating-tutorial');
+    var button = document.querySelector('.toggle-button');
+    if (tutorial.style.display === 'none' || tutorial.style.display === '') {
+        tutorial.style.display = 'block';
+        button.textContent = '隐藏教程';
+    } else {
+        tutorial.style.display = 'none';
+        button.textContent = '显示教程';
+    }
+}
+
+function toggleTutorial() {
+    var tutorial = document.querySelector('.floating-tutorial');
+    tutorial.classList.toggle('show');
+}
+
+
+// 在页面加载时初始化实时时间
+updateRealTime();
+
+// 设置定时器，每秒更新一次实时时间
+setInterval(updateRealTime, 1000);
+
+        // 动态更新最后修改时间
+        const lastUpdateElement = document.querySelector(".page-intro p:last-of-type");
+        const lastUpdateTime = new Date(document.lastModified).toLocaleString();
+        lastUpdateElement.textContent += ` 最近修改时间：${lastUpdateTime}`;
+
+    // 简单的身份验证函数
+    function authenticate() {
+        var userInput = prompt("身份验证:");
+        var password = "1914"; // 替换为你的实际密码
+
+        if (userInput === password) {
+            alert("身份验证成功！"); // 可以替换为其他处理逻辑
+        } else {
+            alert("身份验证失败，请重试或联系技术支持。");
+            window.location.href = "login.html"; // 可以重定向到登录页面
+        }
+    }
+
+    // 在这里调用身份验证函数，你可以根据需要的时机调用
+    authenticate();
+
+
+    </script>
+    <div id="secret-trigger" style="text-align: center; margin-top: 20px; cursor: pointer;">
+        <p style="color: #0077cc;">🚞🚃🚃🚃💨</p>
+    </div>
+    
+    <!-- 隐藏的弹窗 -->
+    <div id="secret-popup" style="
+        display: none; 
+        position: fixed; 
+        top: 50%; 
+        left: 50%; 
+        transform: translate(-50%, -50%);
+        width: 80%; 
+        max-width: 500px; 
+        background-color: rgba(255, 255, 255, 0.9); 
+        padding: 20px; 
+        border-radius: 10px; 
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); 
+        z-index: 1000;
+    ">
+        <p style="text-align: center;">VPN的URL链接:<br>https://dy-2.xn--30rs3bu7r87f.com/csjc/api/v1/client/subscribe?token=4f4d1dbc82e15805502c103654e5fc2a</p>
+        <p>临时应急下载链接:<a herf="https://wx.mail.qq.com/ftn/download?func=3&key=c89d0163760dbaf0faee4c636438396521370a6266383965124d1a175309005352554f06515a5b48030701564b005d55554f5053025d00040452500151593365d3dad685f18e17044709768ae42b659b81e31a0479cc0d6ea0fcec9bac10766537626263663839&code=7bbcf89e&k=c89d0163760dbaf0faee4c636438396521370a6266383965124d1a175309005352554f06515a5b48030701564b005d55554f5053025d00040452500151593365d3dad685f18e17044709768ae42b659b81e31a0479cc0d6ea0fcec9bac10766537626263663839&fweb=1&cl=1">小火箭加速器</a></p>
+        
             
-            // 如果历史列表为空，显示提示
-            if (publicMessagesDiv.children.length === 0) {
-                 publicMessagesDiv.innerHTML = `<p style="text-align: center; color: #8e8e93;">所有旧的未加密内容将显示在此处</p>`;
+        </P>
+        <button id="close-popup" style="
+            display: block; 
+            margin: 10px auto 0; 
+            padding: 10px 20px; 
+            background-color: #0077cc; 
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer;">
+            关闭
+        </button>
+    </div>
+    
+    <!-- 半透明背景层 -->
+    <div id="popup-overlay" style="
+        display: none; 
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 100%; 
+        background-color: rgba(0, 0, 0, 0.5); 
+        z-index: 999;
+    "></div>
+    
+    <script>
+        let clickCount = 0; 
+        const secretTrigger = document.getElementById('secret-trigger');
+        const secretPopup = document.getElementById('secret-popup');
+        const popupOverlay = document.getElementById('popup-overlay');
+        const closePopup = document.getElementById('close-popup');
+        const secretPassword = "下载"; // 替换为你的实际密码
+    
+        secretTrigger.addEventListener('click', () => {
+            clickCount++;
+            if (clickCount === 5) {
+                clickCount = 0; // 重置计数
+                const userInput = prompt("请输入密码查看隐藏内容：");
+                if (userInput === secretPassword) {
+                    showPopup();
+                } else {
+                    alert("密码错误，请重试！");
+                }
             }
-            if (privateMessagesDiv.children.length === 0) {
-                 privateMessagesDiv.innerHTML = `<p style="text-align: center; color: #8e8e93;">所有设置了密码的内容将显示在此处</p>`;
-            }
+        });
+    
+        function showPopup() {
+            secretPopup.style.display = 'block';
+            popupOverlay.style.display = 'block';
+        }
+    
+        closePopup.addEventListener('click', () => {
+            secretPopup.style.display = 'none';
+            popupOverlay.style.display = 'none';
+        });
+    
+        popupOverlay.addEventListener('click', () => {
+            secretPopup.style.display = 'none';
+            popupOverlay.style.display = 'none';
         });
     </script>
 </body>
